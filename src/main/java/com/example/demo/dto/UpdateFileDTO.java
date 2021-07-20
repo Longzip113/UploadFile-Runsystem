@@ -4,6 +4,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 public class UpdateFileDTO {
 	
+	private Long id;
+	
 	private String description;
 	 
     // Upload files.
@@ -25,4 +27,11 @@ public class UpdateFileDTO {
         this.fileDatas = fileDatas;
     }
 
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
 }

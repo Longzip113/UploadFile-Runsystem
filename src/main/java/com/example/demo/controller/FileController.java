@@ -29,11 +29,12 @@ public class FileController {
 	}
 	
 	@PostMapping(value = "updateFile")
-	public String updateFile(@RequestParam(required = false) MultipartFile file) {
+	public String updateFile(@RequestParam(required = false) MultipartFile file, @RequestParam(required = false)Long id) {
 
 		UpdateFileDTO updateFileDTO = new UpdateFileDTO();
 		updateFileDTO.setFileDatas(file);
 		updateFileDTO.setDescription("Update");
+		updateFileDTO.setId(id);
 
 		return uploadFileService.updateFile(updateFileDTO);
 	}
