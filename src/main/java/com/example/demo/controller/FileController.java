@@ -41,7 +41,7 @@ public class FileController {
 	
 	
 	@DeleteMapping(value = "deleteFile")
-	public String deleteFile(@RequestParam(required = false)String name) {
-		return uploadFileService.deleteFile(name);
+	public String deleteFile(@RequestParam(required = false)String name, Long id) {
+		return uploadFileService.deleteFile(name, id);
 	}
 }

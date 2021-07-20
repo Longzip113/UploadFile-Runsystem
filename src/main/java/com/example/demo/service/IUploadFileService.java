@@ -4,6 +4,6 @@ import com.example.demo.dto.UpdateFileDTO;
 
 public interface IUploadFileService {
 	public String uploadFile(UpdateFileDTO updateFileDTO);
-	public String deleteFile(String nameFile);
+	public String deleteFile(String nameFile, Long id);
 	public String updateFile(UpdateFileDTO updateFileDTO);
 }

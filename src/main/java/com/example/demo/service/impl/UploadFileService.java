@@ -8,7 +8,6 @@ import java.util.ResourceBundle;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import com.example.demo.dto.UpdateFileDTO;
@@ -27,7 +26,6 @@ public class UploadFileService implements IUploadFileService {
 	FileRepository fileRepository;
 
 	@Override
-	@Transactional
 	public String uploadFile(UpdateFileDTO updateFileDTO) {
 
 		String description = updateFileDTO.getDescription();
@@ -38,26 +36,23 @@ public class UploadFileService implements IUploadFileService {
 
 		// Original file name at Client.
 		String name = StringUtils.cleanPath(updateFileDTO.getFileDatas().getOriginalFilename());
+		uploadAndUpdate(updateFileDTO, name, uploadRootPath);
 
-		if (uploadAndUpdate(updateFileDTO, name, uploadRootPath)) {
+//		Save name and Path folder file on database
+		FileEntity entity = new FileEntity();
+		entity.setFloder(uploadRootPath);
+		entity.setName(name);
+		entity = fileRepository.save(entity);
 
-			FileEntity entity = new FileEntity();
-
-			entity.setFloder(uploadRootPath);
-			entity.setName(name);
-			entity = fileRepository.save(entity);
-
-			return "Upload successfuly" + entity.getId();
-		} else {
-			throw new FileStorageException(message.getString("CHECK_FILE_EXIST"));
-		}
+		return "Upload successfuly id: " + entity.getId();
 	}
 
 	@Override
-	@Transactional
-	public String deleteFile(String nameFile) {
+	public String deleteFile(String nameFile, Long id) {
 		File file = new File(resourceBundle.getString("FOLDER") + nameFile);
 		if (file.delete()) {
+//			Delete on database
+			fileRepository.deleteById(id);
 			return message.getString("DELETE_SUCCESS");
 		} else {
 			throw new FileStorageException(message.getString("ERROR_DELETE"));
@@ -65,7 +60,6 @@ public class UploadFileService implements IUploadFileService {
 	}
 
 	@Override
-	@Transactional
 	public String updateFile(UpdateFileDTO updateFileDTO) {
 		// Root folder upload file.
 		String uploadRootPath = resourceBundle.getString("FOLDER");
@@ -74,24 +68,25 @@ public class UploadFileService implements IUploadFileService {
 		String name = StringUtils.cleanPath(updateFileDTO.getFileDatas().getOriginalFilename());
 
 		Optional<FileEntity> entity = fileRepository.findById(updateFileDTO.getId());
+		
+		if (entity == null) {
+			throw new FileStorageException(message.getString("ID_NOT_EXIST"));
+		}
 
 		// Check file oldName and newName
 		if (!name.equals(entity.get().getName())) {
 
-			// Do rename file
-			if (updateNameFile(entity.get().getName(), name, uploadRootPath)) {
-//				Update nameFile Database
-				FileEntity entityNew = new FileEntity();
-				
-				entityNew.setFloder(uploadRootPath);
-				entityNew.setId(updateFileDTO.getId());
-				entityNew.setName(name);
-				entityNew = fileRepository.save(entityNew);
-				
-				//return message.getString("RENAME_SUCCESS");
-			} else {
-				throw new FileStorageException(message.getString("RENAME_FAILURE"));
-			}
+//			Do rename file
+			updateNameFile(entity.get().getName(), name, uploadRootPath);
+//				Update nameFile on Database
+			FileEntity entityNew = new FileEntity();
+
+			entityNew.setFloder(uploadRootPath);
+			entityNew.setId(updateFileDTO.getId());
+			entityNew.setName(name);
+			entityNew = fileRepository.save(entityNew);
+
+			return message.getString("RENAME_SUCCESS");
 		}
 
 		File checkFile = new File(uploadRootPath + name);
@@ -101,11 +96,8 @@ public class UploadFileService implements IUploadFileService {
 			throw new FileStorageException(message.getString("CHECK_FILE_EXIST"));
 		} else {
 //			Update file
-			if (uploadAndUpdate(updateFileDTO, name, uploadRootPath)) {
-				return message.getString("UPDATE_SUCCESS");
-			} else {
-				throw new FileStorageException(message.getString("UPDATE_FAILURE"));
-			}
+			uploadAndUpdate(updateFileDTO, name, uploadRootPath);
+			return message.getString("UPDATE_SUCCESS");
 		}
 	}
 
@@ -117,13 +109,12 @@ public class UploadFileService implements IUploadFileService {
 
 	}
 
-	private Boolean uploadAndUpdate(UpdateFileDTO updateFileDTO, String name, String uploadRootPath) {
+	private void uploadAndUpdate(UpdateFileDTO updateFileDTO, String name, String uploadRootPath) {
 		File uploadRootDir = new File(uploadRootPath);
 		// Create folder root upload if not exists.
 		if (!uploadRootDir.exists()) {
 			uploadRootDir.mkdirs();
 		}
-
 		// Check if the file's name contains invalid characters
 		if (name.endsWith(".docx") || name.endsWith(".xlsx")) {
 			if (name != null && name.length() > 0) {
@@ -134,7 +125,6 @@ public class UploadFileService implements IUploadFileService {
 					BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(serverFile));
 					stream.write(updateFileDTO.getFileDatas().getBytes());
 					stream.close();
-					return true;
 				} catch (Exception e) {
 					throw new FileStorageException(message.getString("COULD_NOT"));
 				}
