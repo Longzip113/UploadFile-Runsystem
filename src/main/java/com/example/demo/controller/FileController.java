@@ -19,7 +19,7 @@ public class FileController {
 	IUploadFileService uploadFileService;
 
 	@PostMapping(value = "uploadFile")
-	public String uploadFile(@RequestParam(required = false) MultipartFile file) {
+	public String uploadFile(@RequestParam MultipartFile file) {
 
 		UpdateFileDTO updateFileDTO = new UpdateFileDTO();
 		updateFileDTO.setFileDatas(file);
@@ -29,7 +29,7 @@ public class FileController {
 	}
 	
 	@PostMapping(value = "updateFile")
-	public String updateFile(@RequestParam(required = false) MultipartFile file, @RequestParam(required = false)Long id) {
+	public String updateFile(@RequestParam MultipartFile file, @RequestParam Long id) {
 
 		UpdateFileDTO updateFileDTO = new UpdateFileDTO();
 		updateFileDTO.setFileDatas(file);
@@ -41,7 +41,7 @@ public class FileController {
 	
 	
 	@DeleteMapping(value = "deleteFile")
-	public String deleteFile(@RequestParam(required = false)String name, Long id) {
+	public String deleteFile(@RequestParam String name,@RequestParam Long id) {
 		return uploadFileService.deleteFile(name, id);
 	}
 }

@@ -68,10 +68,6 @@ public class UploadFileService implements IUploadFileService {
 		String name = StringUtils.cleanPath(updateFileDTO.getFileDatas().getOriginalFilename());
 
 		Optional<FileEntity> entity = fileRepository.findById(updateFileDTO.getId());
-		
-		if (entity == null) {
-			throw new FileStorageException(message.getString("ID_NOT_EXIST"));
-		}
 
 		// Check file oldName and newName
 		if (!name.equals(entity.get().getName())) {
