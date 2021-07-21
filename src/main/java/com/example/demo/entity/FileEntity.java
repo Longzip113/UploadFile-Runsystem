@@ -10,13 +10,14 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "file")
 public class FileEntity {
+	
 	@Id //(định nghia khoa chinh va not null)
 	@GeneratedValue(strategy = GenerationType.IDENTITY) //id tự động tăng
 	private Long id;  
 	
 	@Column(name = "name")
 	private String name;
-	
+
 	@Column(name = "floder")
 	private String floder;
 

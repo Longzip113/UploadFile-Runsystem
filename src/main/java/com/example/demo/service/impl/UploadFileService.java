@@ -12,11 +12,16 @@ import org.springframework.util.StringUtils;
 
 import com.example.demo.dto.UpdateFileDTO;
 import com.example.demo.entity.FileEntity;
+import com.example.demo.entity.FileEntityES;
 import com.example.demo.exception.FileStorageException;
+import com.example.demo.repository.FileESRepository;
 import com.example.demo.repository.FileRepository;
 import com.example.demo.service.IUploadFileService;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class UploadFileService implements IUploadFileService {
 
 	ResourceBundle resourceBundle = ResourceBundle.getBundle("folder");
@@ -25,9 +30,13 @@ public class UploadFileService implements IUploadFileService {
 	@Autowired
 	FileRepository fileRepository;
 
+	@Autowired
+	FileESRepository fileESRepository;
+	
+
 	@Override
 	public String uploadFile(UpdateFileDTO updateFileDTO) {
-
+		
 		String description = updateFileDTO.getDescription();
 		System.out.println("Description: " + description);
 
@@ -43,6 +52,15 @@ public class UploadFileService implements IUploadFileService {
 		entity.setFloder(uploadRootPath);
 		entity.setName(name);
 		entity = fileRepository.save(entity);
+		
+//		Set data ElasticSearch
+		FileEntityES entityES = new FileEntityES();
+		entityES.setFloder(uploadRootPath);
+		entityES.setName(name);
+		entityES.setDescription("Upload");
+		
+//		Save ElasticSearch
+		fileESRepository.save(entityES);
 
 		return "Upload successfuly id: " + entity.getId();
 	}
@@ -53,6 +71,10 @@ public class UploadFileService implements IUploadFileService {
 		if (file.delete()) {
 //			Delete on database
 			fileRepository.deleteById(id);
+			
+//			Delete ElasticSearch
+			//fileElasticRepository.deleteById(id);
+			
 			return message.getString("DELETE_SUCCESS");
 		} else {
 			throw new FileStorageException(message.getString("ERROR_DELETE"));
@@ -81,6 +103,9 @@ public class UploadFileService implements IUploadFileService {
 			entityNew.setId(updateFileDTO.getId());
 			entityNew.setName(name);
 			entityNew = fileRepository.save(entityNew);
+			
+//			Save ElasticSearch
+			//fileElasticRepository.save(entityNew);
 
 			return message.getString("RENAME_SUCCESS");
 		}
