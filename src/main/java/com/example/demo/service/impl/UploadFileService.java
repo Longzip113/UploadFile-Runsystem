@@ -3,6 +3,7 @@ package com.example.demo.service.impl;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -51,17 +52,19 @@ public class UploadFileService implements IUploadFileService {
 		FileEntity entity = new FileEntity();
 		entity.setFloder(uploadRootPath);
 		entity.setName(name);
+		entity.setDescription(description);
 		entity = fileRepository.save(entity);
 		
 //		Set data ElasticSearch
 		FileEntityES entityES = new FileEntityES();
-		entityES.setFloder(uploadRootPath);
-		entityES.setName(name);
-		entityES.setDescription("Upload");
+		entityES.setId(entity.getId());
+		entityES.setFloder(entity.getFloder());
+		entityES.setName(entity.getName());
+		entityES.setDescription(entity.getDescription());
 		
 //		Save ElasticSearch
 		fileESRepository.save(entityES);
-
+		
 		return "Upload successfuly id: " + entity.getId();
 	}
 
@@ -71,9 +74,9 @@ public class UploadFileService implements IUploadFileService {
 		if (file.delete()) {
 //			Delete on database
 			fileRepository.deleteById(id);
-			
-//			Delete ElasticSearch
-			//fileElasticRepository.deleteById(id);
+
+//			Delete on ElaticSearch			
+			fileESRepository.deleteById(id);
 			
 			return message.getString("DELETE_SUCCESS");
 		} else {
@@ -96,7 +99,7 @@ public class UploadFileService implements IUploadFileService {
 
 //			Do rename file
 			updateNameFile(entity.get().getName(), name, uploadRootPath);
-//				Update nameFile on Database
+//			Update nameFile on Database
 			FileEntity entityNew = new FileEntity();
 
 			entityNew.setFloder(uploadRootPath);
@@ -104,8 +107,15 @@ public class UploadFileService implements IUploadFileService {
 			entityNew.setName(name);
 			entityNew = fileRepository.save(entityNew);
 			
-//			Save ElasticSearch
-			//fileElasticRepository.save(entityNew);
+//			Set data ElasticSearch
+			FileEntityES entityES = new FileEntityES();
+			entityES.setId(entityNew.getId());
+			entityES.setFloder(entityNew.getFloder());
+			entityES.setName(entityNew.getName());
+			entityES.setDescription(entityNew.getDescription());
+			
+//			update on ElasticSearch
+			fileESRepository.save(entityES);
 
 			return message.getString("RENAME_SUCCESS");
 		}
@@ -156,5 +166,50 @@ public class UploadFileService implements IUploadFileService {
 			throw new FileStorageException(message.getString("WRONG_FORMAT"));
 		}
 	}
+
+	@Override
+	public List<FileEntityES> searchFileByDescriptionES(String desc) {
+		List<FileEntityES> fileEntityESs = fileESRepository.findByDescription(desc);
+		if (fileEntityESs.size() > 0) {
+			return fileEntityESs;
+		} else {
+			throw new FileStorageException(message.getString("NOT_FOUND"));
+		}
+	}
+
+	@Override
+	public List<FileEntity> searchFileByDescription(String desc) {
+		List<FileEntity> fileEntity = fileRepository.findByDescription(desc);
+		if (fileEntity.size() > 0) {
+			return fileEntity;
+		} else {
+			throw new FileStorageException(message.getString("NOT_FOUND"));
+		}
+	}
+	
+	@Override
+	public String compareSearch(String desc) {
+		
+		String result = "";
+		
+//		Time search ElasticSearch
+		Long startES = System.currentTimeMillis();
+		List<FileEntityES> fileEntityESs = fileESRepository.findByDescription(desc);
+		Long endES = System.currentTimeMillis() - startES;
+		
+		result += "Search ElaticSearch: " + endES + " ms -";
+		
+//		Time search Database
+		Long start = System.currentTimeMillis();
+		List<FileEntity> fileEntity = fileRepository.findByDescription(desc);
+		Long end = System.currentTimeMillis() - start;
+		
+		result += "Search Database: " + end + " ms ";
+		
+		return result;
+		
+	}
+	
+	
 
 }
